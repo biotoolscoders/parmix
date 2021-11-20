@@ -12,7 +12,7 @@ parMix allows two types of inference. 1) Joint inference of parental ancestry an
 
 The first model infers the ancestry and genotypes for both parents at the same time, but the second infers the ancestry and genotypes for the single parent and runs independently for both parents.
 
-Please read the tutorial of parMix for more details.
+Please read the [tutorial of parMix](https://github.com/biotoolscoders/parmix/blob/main/parMix_Tutorial.pdf) for more details.
 
 # Contact
 If you have any questions, please email: yiming.zhang.cse@uconn.edu or yufeng.wu@uconn.edu.
