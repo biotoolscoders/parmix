@@ -1,0 +1,108 @@
+#!/usr/bin/python3
+import sys
+import argparse
+import numpy
+import math
+import random
+import time
+from Infer1Recom import *
+from Infer1RecomInd import *
+from Infer2Ance import *
+from Infer2AnceInd import *
+from Infer3Geno import *
+from Infer3GenoInd import *
+
+from Transitions import *
+
+
+def get_parser():
+    parser = argparse.ArgumentParser(description='PedMix_More')
+    parser.add_argument('-c', dest='child', help='Number of Children', type = int, required=True)
+    parser.add_argument('-p', dest='phasing', help='Phasing Error Invovled. 1: Without Phasing Error, Run Independent; 2: With Phasing Error', type = int, required=True, choices=[1, 2])
+    parser.add_argument('-b', dest='bps', help='Number of Base Pairs (Before Trimming)', type = int, required=True)
+    parser.add_argument('-P', dest='Position', help='Position File Path', required=True)
+    parser.add_argument('-C', dest='Children', help='Children Genotypes File Path', required=True)
+    parser.add_argument('-A', dest='Alleles_A', help='Allele Frenqucies File Path of Population A', required=True)
+    parser.add_argument('-B', dest='Alleles_B', help='Allele Frenqucies File Path of Population B', required=True)
+    parser.add_argument('-D', dest='LD_A', help='LD File Path of Population A', required=True)
+    parser.add_argument('-E', dest='LD_B', help='LD File Path of Population B', required=True)
+    parser.add_argument('-R', dest='recombination', help='Recombination Rate', required=True)
+    parser.add_argument('-r', dest='rate', help='Phasing Error Rate (Used only when "-p" is "1")', type = float)
+    parser.add_argument('-e', dest='error', help='Genotype Error Rate (Default is 10E-8)', type = float, default = 0.00000001)
+    return parser
+
+
+
+if __name__ == '__main__':
+    parser = get_parser()
+    args = parser.parse_args()
+
+Nc = int(args.child)
+Ng = int(args.bps)
+PositionFile = args.Position
+ChildrenFile = args.Children
+AFAFile = args.Alleles_A
+AFBFile = args.Alleles_B
+LDAFile = args.LD_A
+LDBFile = args.LD_B
+Ge = float(args.error)
+Recomb = float(args.recombination)
+
+if(args.phasing == 1):
+    time1 = time.time()
+    data1, length = InferRecomInd(Nc, Ng, Recomb, PositionFile, ChildrenFile, Ge)
+
+    with open('./Results/Result1RecomInd.dat', 'w') as fw:
+        for i in range(length):
+            fw.write('%s ' % data1[i][:Nc])
+    time2 = time.time()
+    print('Model 1 Finished')
+    print('Model 1 time comsume: %f s' % (time2-time1))
+
+    time1 = time.time()
+    data2 = InferAnceInd(Nc, Ng, Recomb, PositionFile, ChildrenFile, Ge, AFAFile, AFBFile, data1)
+    with open('./Results/Result2AnceInd.dat', 'w') as fw:
+        for i in range(length):
+            fw.write('%s ' % data2[i])
+    time2 = time.time()
+    print('Model 2 Finished')
+    print('Model 2 time comsume: %f s' % (time2-time1))
+
+    time1 = time.time()
+    data3 = InferGenoInd(Nc, Ng, Recomb, PositionFile, ChildrenFile, Ge, AFAFile, AFBFile, LDAFile, LDBFile, data1, data2)
+    with open('./Results/Result3GenoInd.dat', 'w') as fw:
+        for i in range(length):
+            fw.write('%s ' % data3[i])
+    time2 = time.time()
+    print('Model 3 Finished')
+    print('Model 3 time comsume: %f s' % (time2-time1))
+
+elif(args.phasing == 2):
+    PPE = float(args.rate)
+
+    time1 = time.time()
+    data1, length = InferRecom(Nc, Ng, Recomb, PositionFile, ChildrenFile, PPE, Ge)
+    with open('./Results/Result1Recom.dat', 'w') as fw:
+        for i in range(length):
+            fw.write('%s ' % data1[i][:Nc*3])
+    time2 = time.time()
+    print('Model 1 Finished')
+    print('Model 1 time comsume: %f s' % (time2-time1))
+
+    time1 = time.time()
+    data2 = InferAnce(Nc, Ng, Recomb, PositionFile, ChildrenFile, PPE, Ge, AFAFile, AFBFile, data1)
+    with open('./Results/Result2Ance.dat', 'w') as fw:
+        for i in range(length):
+            fw.write('%s ' % data2[i])
+    time2 = time.time()
+    print('Model 2 Finished')
+    print('Model 2 time comsume: %f s' % (time2-time1))
+
+    time1 = time.time()
+    data3 = InferGeno(Nc, Ng, Recomb, PositionFile, ChildrenFile, PPE, Ge, AFAFile, AFBFile, LDAFile, LDBFile, data1, data2)
+    with open('./Results/Result3Geno.dat', 'w') as fw:
+        for i in range(length):
+            fw.write('%s ' % data3[i])
+    time2 = time.time()
+    print('Model 3 Finished')
+    print('Model 3 time comsume: %f s' % (time2-time1))
